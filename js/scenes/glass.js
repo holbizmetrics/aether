@@ -48,8 +48,8 @@ export function createGlass(renderer) {
   const group = new THREE.Group();
   scene.add(group);
 
-  // Hero: a glass torus knot
-  const knot = new THREE.Mesh(new THREE.TorusKnotGeometry(2.0, 0.62, 220, 32), glassMat);
+  // Hero: a glass torus knot (leaner tessellation → steadier fps)
+  const knot = new THREE.Mesh(new THREE.TorusKnotGeometry(2.0, 0.6, 170, 26), glassMat);
   group.add(knot);
 
   // Chrome + glass companions orbiting the hero
@@ -60,9 +60,9 @@ export function createGlass(renderer) {
     new THREE.SphereGeometry(0.7, 48, 48),
     new THREE.DodecahedronGeometry(0.75, 0),
   ];
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 5; i++) {
     const m = new THREE.Mesh(geoms[i % geoms.length], i % 2 ? chromeMat : glassMat);
-    const a = (i / 7) * Math.PI * 2;
+    const a = (i / 5) * Math.PI * 2;
     m.userData = { a, r: 4.6 + (i % 3) * 0.6, y: Math.sin(i) * 1.8, spin: 0.3 + Math.random() };
     companions.push(m);
     group.add(m);
@@ -71,7 +71,10 @@ export function createGlass(renderer) {
   return {
     scene,
     camera,
-    update(local, t, _dt, mouse) {
+    update(local, t, _dt, mouse, audio) {
+      const b = audio ? audio.bass : 0.0;
+      l1.intensity = 600 * (1.0 + b * 1.2);   // highlights pulse with the music
+      l2.intensity = 500 * (1.0 + b * 1.2);
       knot.rotation.x = t * 0.3;
       knot.rotation.y = t * 0.22;
       for (const m of companions) {

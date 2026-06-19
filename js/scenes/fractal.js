@@ -44,14 +44,17 @@ export function createFractal() {
         return 0.5 * log(r) * r / dr;
       }
 
+      // tetrahedron normal — 4 DE evals instead of 6 (cheaper → smoother fps)
       vec3 calcNormal(vec3 p){
-        float e = 0.0005; float t;
-        vec2 h = vec2(e, 0.0);
-        return normalize(vec3(
-          DE(p + h.xyy, t) - DE(p - h.xyy, t),
-          DE(p + h.yxy, t) - DE(p - h.yxy, t),
-          DE(p + h.yyx, t) - DE(p - h.yyx, t)
-        ));
+        const vec2 k = vec2(1.0, -1.0);
+        const float e = 0.0006;
+        float t;
+        return normalize(
+          k.xyy * DE(p + k.xyy * e, t) +
+          k.yyx * DE(p + k.yyx * e, t) +
+          k.yxy * DE(p + k.yxy * e, t) +
+          k.xxx * DE(p + k.xxx * e, t)
+        );
       }
 
       mat3 camBasis(vec3 ro, vec3 ta){
@@ -67,7 +70,8 @@ export function createFractal() {
 
         // camera orbits, and falls inward as you scroll (uProg 0..1)
         float ang = uTime * 0.12 + uMouse.x * 0.6;
-        float dist = mix(2.6, 1.18, smoothstep(0.0, 1.0, uProg));
+        // slow continuous breathing so the camera glides even when you stop scrolling
+        float dist = mix(2.6, 1.18, smoothstep(0.0, 1.0, uProg)) + sin(uTime * 0.15) * 0.05;
         vec3 ro = vec3(cos(ang) * dist, 0.35 + uMouse.y * 0.4, sin(ang) * dist);
         vec3 ta = vec3(0.0);
         vec3 rd = camBasis(ro, ta) * normalize(vec3(uv, 1.4));
@@ -76,7 +80,7 @@ export function createFractal() {
         float minD = 1e9;       // closest approach → bounded halo (no runaway accumulation)
         bool hit = false;
         vec3 p = ro;
-        for(int i = 0; i < 120; i++){
+        for(int i = 0; i < 96; i++){
           p = ro + rd * t;
           float tr; float d = DE(p, tr);
           minD = min(minD, d);

@@ -161,6 +161,32 @@ body {
   .chapter { padding: 0 6vw; }
 }
 
+/* Toggles (music + voice) */
+#controls {
+  position: fixed;
+  top: 1.2rem; right: 1.4rem;
+  z-index: 6;
+  display: flex;
+  gap: 0.6rem;
+}
+.ctl {
+  padding: 0.6rem 1.1rem;
+  background: rgba(8, 14, 28, 0.6);
+  border: 1px solid rgba(108, 240, 255, 0.35);
+  border-radius: 999px;
+  color: var(--accent);
+  font-family: var(--font);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.3s, box-shadow 0.3s, opacity 0.3s, color 0.3s;
+}
+.ctl:hover { background: rgba(108, 240, 255, 0.14); box-shadow: 0 0 24px rgba(108, 240, 255, 0.35); }
+.ctl.on { color: #fff; border-color: rgba(108, 240, 255, 0.7); box-shadow: 0 0 24px rgba(108, 240, 255, 0.3); }
+.ctl.missing { color: var(--dim); border-color: rgba(143, 163, 200, 0.3); cursor: default; }
+
 /* If WebGL is missing, at least say something */
 .webgl-error {
   position: fixed; inset: 0; z-index: 99;

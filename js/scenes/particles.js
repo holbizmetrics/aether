@@ -124,6 +124,7 @@ export function createParticles() {
       uPhase: { value: 0 },
       uTime: { value: 0 },
       uPix: { value: 1 },
+      uPulse: { value: 0 }, // bass energy from the music
     },
     transparent: true,
     depthWrite: false,
@@ -131,7 +132,7 @@ export function createParticles() {
     vertexShader: /* glsl */`
       attribute vec3 aT0; attribute vec3 aT1; attribute vec3 aT2; attribute vec3 aT3;
       attribute float aSize; attribute vec3 aColor;
-      uniform float uPhase; uniform float uTime; uniform float uPix;
+      uniform float uPhase; uniform float uTime; uniform float uPix; uniform float uPulse;
       varying vec3 vColor; varying float vTw;
       vec3 pick(int s){ if(s==0) return aT0; if(s==1) return aT1; if(s==2) return aT2; return aT3; }
       void main(){
@@ -147,12 +148,13 @@ export function createParticles() {
         vColor = aColor;
         vTw = 0.5 + 0.5 * sin(uTime * 2.2 + aSize * 9.0);
         vec4 mv = modelViewMatrix * vec4(pos, 1.0);
-        gl_PointSize = clamp(aSize * uPix * (110.0 / -mv.z), 0.8, 5.0);
+        gl_PointSize = clamp(aSize * uPix * (110.0 / -mv.z) * (1.0 + uPulse * 0.9), 0.8, 7.0);
         gl_Position = projectionMatrix * mv;
       }
     `,
     fragmentShader: /* glsl */`
       precision highp float;
+      uniform float uPulse;
       varying vec3 vColor; varying float vTw;
       void main(){
         vec2 uv = gl_PointCoord - 0.5;
@@ -160,7 +162,7 @@ export function createParticles() {
         if (d > 0.5) discard;
         float a = smoothstep(0.5, 0.0, d);
         a *= a * 0.42;
-        vec3 col = vColor * (0.28 + 0.5 * vTw);
+        vec3 col = vColor * (0.28 + 0.5 * vTw) * (1.0 + uPulse * 0.8);
         gl_FragColor = vec4(col, a);
       }
     `,
@@ -174,17 +176,29 @@ export function createParticles() {
   const sc = 6000, sp = new Float32Array(sc * 3);
   for (let i = 0; i < sc * 3; i++) sp[i] = (Math.random() - 0.5) * 800;
   starGeo.setAttribute("position", new THREE.BufferAttribute(sp, 3));
+  // Soft round sprite — without a map, point-sprites render as SQUARES, and with
+  // size-attenuation a star near the camera balloons into a big square on parallax.
+  const starCanvas = document.createElement("canvas");
+  starCanvas.width = starCanvas.height = 32;
+  const sx = starCanvas.getContext("2d");
+  const sg = sx.createRadialGradient(16, 16, 0, 16, 16, 16);
+  sg.addColorStop(0, "rgba(255,255,255,1)");
+  sg.addColorStop(1, "rgba(255,255,255,0)");
+  sx.fillStyle = sg; sx.fillRect(0, 0, 32, 32);
+  const starTex = new THREE.CanvasTexture(starCanvas);
   const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({
-    color: 0x2a3a66, size: 0.7, sizeAttenuation: true, transparent: true, opacity: 0.6,
+    map: starTex, color: 0x9fb6e6, size: 2.2, sizeAttenuation: false,
+    transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending,
   }));
   scene.add(stars);
 
   return {
     scene,
     camera,
-    update(local, t, _dt, mouse) {
+    update(local, t, _dt, mouse, audio) {
       mat.uniforms.uPhase.value = local * 3.0; // scroll morphs across all 4 shapes
       mat.uniforms.uTime.value = t;
+      mat.uniforms.uPulse.value = audio ? audio.bass : 0.0;
       // gentle auto-rotate + mouse parallax
       points.rotation.y = t * 0.04 + mouse.x * 0.35;
       points.rotation.x = mouse.y * 0.22;
