@@ -33,7 +33,7 @@ function targetText(arr, count, word = "AETHER") {
     const p = pts[i % pts.length];
     arr[i * 3]     = (p[0] - cw / 2) * scale + (Math.random() - 0.5) * 0.4;
     arr[i * 3 + 1] = -(p[1] - ch / 2) * scale + (Math.random() - 0.5) * 0.4;
-    arr[i * 3 + 2] = (Math.random() - 0.5) * 9.0;   // real depth → 3D word, no 2D pile-up
+    arr[i * 3 + 2] = (Math.random() - 0.5) * 3.0;   // shallow depth → crisp readable letters
   }
 }
 
@@ -118,10 +118,12 @@ export function createParticles() {
   targetHeart(t4, COUNT);    // form 4: heart
 
   const sizes = new Float32Array(COUNT);
+  const seeds = new Float32Array(COUNT);
   const colors = new Float32Array(COUNT * 3);
   const c = new THREE.Color();
   for (let i = 0; i < COUNT; i++) {
     sizes[i] = 0.6 + Math.random() * Math.random() * 2.4;
+    seeds[i] = Math.random() * 100.0;          // unique phase per point → de-synced motion
     // hue ribbon from cyan → violet → warm white
     c.setHSL(0.5 + Math.random() * 0.18, 0.85, 0.6 + Math.random() * 0.25);
     colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
@@ -135,6 +137,7 @@ export function createParticles() {
   geo.setAttribute("aT3", new THREE.BufferAttribute(t3, 3));
   geo.setAttribute("aT4", new THREE.BufferAttribute(t4, 3));
   geo.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
+  geo.setAttribute("aSeed", new THREE.BufferAttribute(seeds, 1));
   geo.setAttribute("aColor", new THREE.BufferAttribute(colors, 3));
 
   const mat = new THREE.ShaderMaterial({
@@ -152,7 +155,7 @@ export function createParticles() {
     blending: THREE.AdditiveBlending,
     vertexShader: /* glsl */`
       attribute vec3 aT0; attribute vec3 aT1; attribute vec3 aT2; attribute vec3 aT3; attribute vec3 aT4;
-      attribute float aSize; attribute vec3 aColor;
+      attribute float aSize; attribute float aSeed; attribute vec3 aColor;
       uniform float uPhase; uniform float uTime; uniform float uPix; uniform float uPulse; uniform float uFlow;
       uniform vec3 uRepel; uniform float uRepelStr;
       varying vec3 vColor; varying float vTw;
@@ -162,14 +165,14 @@ export function createParticles() {
         int seg = int(floor(ph));
         float f = smoothstep(0.0, 1.0, fract(ph));
         vec3 pos = mix(pick(seg), pick(min(seg + 1, 4)), f);
-        // breathing flow field
-        float n = sin(pos.x * 0.14 + uTime * 0.7)
-                + cos(pos.y * 0.15 + uTime * 0.6)
-                + sin(pos.z * 0.13 + uTime * 0.5);
-        // living breathing: gentle on the text (stays readable), fuller on the abstract
-        // forms, plus extra churn during transitions (uFlow)
-        float breathe = mix(0.16, 0.45, smoothstep(0.0, 0.85, uPhase)) + uFlow * 0.45;
-        pos += normalize(pos + 0.0001) * n * breathe;
+        // Alive but BOUNDED + DE-SYNCED. Each point wiggles around its home position with
+        // its OWN random phase (aSeed) → organic swarm, not a whole-frame in-sync pulse;
+        // bounded → the word keeps its shape (no radial smear).
+        vec3 jit = vec3(sin(uTime * 1.3 + aSeed),
+                        sin(uTime * 1.15 + aSeed * 1.7),
+                        sin(uTime * 1.5 + aSeed * 2.3));
+        float amp = mix(0.45, 0.8, smoothstep(0.0, 0.85, uPhase)) + uFlow * 0.7;
+        pos += jit * amp;
         // cursor repulsion: points near the mouse get pushed away → a bubble follows the cursor
         vec3 rdir = pos - uRepel;
         float rdist = length(rdir);
