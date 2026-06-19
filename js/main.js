@@ -33,9 +33,9 @@ const renderPass = new RenderPass(new THREE.Scene(), new THREE.PerspectiveCamera
 composer.addPass(renderPass);
 const bloom = new UnrealBloomPass(
   new THREE.Vector2(window.innerWidth, window.innerHeight),
-  0.85,  // strength
-  0.55,  // radius
-  0.2    // threshold
+  0.45,  // strength — was 0.85, blew the swarm out to solid white
+  0.4,   // radius
+  0.55   // threshold — only genuinely bright cores bloom now
 );
 composer.addPass(bloom);
 
