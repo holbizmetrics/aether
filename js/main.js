@@ -182,9 +182,10 @@ function frame() {
   const st = getState(smoothP);
   const act = acts[st.i];
 
-  // Music levels → the whole scene breathes: bloom pulses with the bass
+  // Music levels → the whole scene breathes: bloom pulses gently with the bass
+  // (bounded so a loud track can't re-saturate the way it did before)
   const audio = updateLevels();
-  bloom.strength = 0.45 + audio.bass * 0.7;
+  bloom.strength = 0.45 + Math.min(audio.bass, 1.0) * 0.18;
 
   // Update + render the active act
   act.obj.update(st.local, t, dt, mouse, audio);

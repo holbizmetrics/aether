@@ -148,7 +148,7 @@ export function createParticles() {
         vColor = aColor;
         vTw = 0.5 + 0.5 * sin(uTime * 2.2 + aSize * 9.0);
         vec4 mv = modelViewMatrix * vec4(pos, 1.0);
-        gl_PointSize = clamp(aSize * uPix * (110.0 / -mv.z) * (1.0 + uPulse * 0.9), 0.8, 7.0);
+        gl_PointSize = clamp(aSize * uPix * (110.0 / -mv.z) * (1.0 + uPulse * 0.4), 0.8, 6.0);
         gl_Position = projectionMatrix * mv;
       }
     `,
@@ -162,7 +162,7 @@ export function createParticles() {
         if (d > 0.5) discard;
         float a = smoothstep(0.5, 0.0, d);
         a *= a * 0.42;
-        vec3 col = vColor * (0.28 + 0.5 * vTw) * (1.0 + uPulse * 0.8);
+        vec3 col = vColor * (0.28 + 0.5 * vTw) * (1.0 + uPulse * 0.35);
         gl_FragColor = vec4(col, a);
       }
     `,

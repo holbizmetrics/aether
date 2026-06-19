@@ -73,8 +73,8 @@ export function createGlass(renderer) {
     camera,
     update(local, t, _dt, mouse, audio) {
       const b = audio ? audio.bass : 0.0;
-      l1.intensity = 600 * (1.0 + b * 1.2);   // highlights pulse with the music
-      l2.intensity = 500 * (1.0 + b * 1.2);
+      l1.intensity = 600 * (1.0 + b * 0.5);   // highlights pulse gently with the music
+      l2.intensity = 500 * (1.0 + b * 0.5);
       knot.rotation.x = t * 0.3;
       knot.rotation.y = t * 0.22;
       for (const m of companions) {
