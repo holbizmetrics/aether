@@ -175,7 +175,7 @@ export function createParticles() {
         float rdist = length(rdir);
         pos += normalize(rdir + 0.0001) * smoothstep(14.0, 0.0, rdist) * 8.0 * uRepelStr;
         vColor = aColor;
-        vTw = 0.5 + 0.5 * sin(uTime * 1.1 + aSize * 9.0);
+        vTw = 0.5 + 0.5 * sin(aSize * 9.0); // steady per-point brightness variety, no time flicker
         vec4 mv = modelViewMatrix * vec4(pos, 1.0);
         gl_PointSize = clamp(aSize * uPix * (110.0 / -mv.z) * (1.0 + uPulse * 0.4), 0.8, 6.0);
         gl_Position = projectionMatrix * mv;
