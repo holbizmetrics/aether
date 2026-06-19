@@ -12,28 +12,28 @@ const COUNT = 500000; // ← performance knob: drop to 200000 for weaker GPUs
 
 // Sample the word from a 2D canvas → 3D point plane
 function targetText(arr, count, word = "AETHER") {
-  const cw = 1100, ch = 300;
+  const cw = 1400, ch = 360;
   const cnv = document.createElement("canvas");
   cnv.width = cw; cnv.height = ch;
   const ctx = cnv.getContext("2d");
   ctx.fillStyle = "#000"; ctx.fillRect(0, 0, cw, ch);
   ctx.fillStyle = "#fff";
-  ctx.font = "800 200px 'Helvetica Neue', Arial, sans-serif";
+  ctx.font = "800 250px 'Helvetica Neue', Arial, sans-serif";
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   ctx.fillText(word, cw / 2, ch / 2);
   const data = ctx.getImageData(0, 0, cw, ch).data;
   const pts = [];
-  for (let y = 0; y < ch; y += 2) {
-    for (let x = 0; x < cw; x += 2) {
+  for (let y = 0; y < ch; y++) {            // sample every pixel → many distinct points, less clumping
+    for (let x = 0; x < cw; x++) {
       if (data[(y * cw + x) * 4] > 128) pts.push([x, y]);
     }
   }
-  const scale = 0.07;
+  const scale = 0.052;
   for (let i = 0; i < count; i++) {
     const p = pts[i % pts.length];
-    arr[i * 3]     = (p[0] - cw / 2) * scale + (Math.random() - 0.5) * 0.3;
-    arr[i * 3 + 1] = -(p[1] - ch / 2) * scale + (Math.random() - 0.5) * 0.3;
-    arr[i * 3 + 2] = (Math.random() - 0.5) * 2.0;
+    arr[i * 3]     = (p[0] - cw / 2) * scale + (Math.random() - 0.5) * 0.4;
+    arr[i * 3 + 1] = -(p[1] - ch / 2) * scale + (Math.random() - 0.5) * 0.4;
+    arr[i * 3 + 2] = (Math.random() - 0.5) * 9.0;   // real depth → 3D word, no 2D pile-up
   }
 }
 
@@ -110,10 +110,12 @@ export function createParticles() {
   const t1 = new Float32Array(COUNT * 3);
   const t2 = new Float32Array(COUNT * 3);
   const t3 = new Float32Array(COUNT * 3);
-  targetSphere(t0, COUNT);
-  targetGalaxy(t1, COUNT);
-  targetHelix(t2, COUNT);
-  targetHeart(t3, COUNT);
+  const t4 = new Float32Array(COUNT * 3);
+  targetText(t0, COUNT);     // form 0: the word AETHER (it's back, and first)
+  targetSphere(t1, COUNT);   // form 1: the nebula sphere
+  targetGalaxy(t2, COUNT);   // form 2: spiral galaxy
+  targetHelix(t3, COUNT);    // form 3: double helix
+  targetHeart(t4, COUNT);    // form 4: heart
 
   const sizes = new Float32Array(COUNT);
   const colors = new Float32Array(COUNT * 3);
@@ -125,12 +127,13 @@ export function createParticles() {
     colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
   }
 
-  // position attribute is required; start at t0
+  // position attribute is required; start at t0 (the AETHER text)
   geo.setAttribute("position", new THREE.BufferAttribute(t0.slice(), 3));
   geo.setAttribute("aT0", new THREE.BufferAttribute(t0, 3));
   geo.setAttribute("aT1", new THREE.BufferAttribute(t1, 3));
   geo.setAttribute("aT2", new THREE.BufferAttribute(t2, 3));
   geo.setAttribute("aT3", new THREE.BufferAttribute(t3, 3));
+  geo.setAttribute("aT4", new THREE.BufferAttribute(t4, 3));
   geo.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
   geo.setAttribute("aColor", new THREE.BufferAttribute(colors, 3));
 
@@ -146,16 +149,16 @@ export function createParticles() {
     depthWrite: false,
     blending: THREE.AdditiveBlending,
     vertexShader: /* glsl */`
-      attribute vec3 aT0; attribute vec3 aT1; attribute vec3 aT2; attribute vec3 aT3;
+      attribute vec3 aT0; attribute vec3 aT1; attribute vec3 aT2; attribute vec3 aT3; attribute vec3 aT4;
       attribute float aSize; attribute vec3 aColor;
       uniform float uPhase; uniform float uTime; uniform float uPix; uniform float uPulse; uniform float uFlow;
       varying vec3 vColor; varying float vTw;
-      vec3 pick(int s){ if(s==0) return aT0; if(s==1) return aT1; if(s==2) return aT2; return aT3; }
+      vec3 pick(int s){ if(s==0) return aT0; if(s==1) return aT1; if(s==2) return aT2; if(s==3) return aT3; return aT4; }
       void main(){
-        float ph = clamp(uPhase, 0.0, 3.0);
+        float ph = clamp(uPhase, 0.0, 4.0);
         int seg = int(floor(ph));
         float f = smoothstep(0.0, 1.0, fract(ph));
-        vec3 pos = mix(pick(seg), pick(min(seg + 1, 3)), f);
+        vec3 pos = mix(pick(seg), pick(min(seg + 1, 4)), f);
         // breathing flow field
         float n = sin(pos.x * 0.14 + uTime * 0.7)
                 + cos(pos.y * 0.15 + uTime * 0.6)
@@ -170,7 +173,7 @@ export function createParticles() {
     `,
     fragmentShader: /* glsl */`
       precision highp float;
-      uniform float uPulse;
+      uniform float uPulse; uniform float uPhase;
       varying vec3 vColor; varying float vTw;
       void main(){
         vec2 uv = gl_PointCoord - 0.5;
@@ -178,7 +181,9 @@ export function createParticles() {
         if (d > 0.5) discard;
         float a = smoothstep(0.5, 0.0, d);
         a *= a * 0.42;
-        vec3 col = vColor * (0.28 + 0.5 * vTw) * (1.0 + uPulse * 0.35);
+        // the text form (phase ~0) is dense → dim it so the letters glitter, not blow out
+        float formDim = mix(0.42, 1.0, smoothstep(0.0, 0.85, uPhase));
+        vec3 col = vColor * (0.28 + 0.5 * vTw) * (1.0 + uPulse * 0.35) * formDim;
         gl_FragColor = vec4(col, a);
       }
     `,
@@ -214,10 +219,10 @@ export function createParticles() {
     update(local, t, _dt, mouse, audio) {
       // Dwell on each form (hold it sharp), then transition crisply — instead of
       // sliding continuously through so the recognizable shape only flashes by.
-      const seg = Math.min(local, 0.9999) * 3.0;
+      const seg = Math.min(local, 0.9999) * 4.0;  // 5 forms: text, sphere, galaxy, helix, heart
       const i = Math.floor(seg);
       const f = seg - i;
-      const hold = 0.55;                          // first 55% of each band holds the form
+      const hold = 0.68;                          // first 68% of each band holds the form sharp (easy to land on)
       let tf = Math.max(0, (f - hold) / (1 - hold));
       tf = tf * tf * (3 - 2 * tf);                // smoothstep the transition
       mat.uniforms.uPhase.value = i + tf;
