@@ -119,6 +119,16 @@ soundBtn.addEventListener("click", async () => {
   }
 });
 
+// --- Fullscreen ---
+const fsBtn = document.getElementById("fs");
+fsBtn.addEventListener("click", () => {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+  else document.exitFullscreen?.();
+});
+document.addEventListener("fullscreenchange", () => {
+  fsBtn.classList.toggle("on", !!document.fullscreenElement);
+});
+
 // --- Voice narration (browser speech synthesis — no files needed) ---
 const voiceBtn = document.getElementById("voice");
 const synth = window.speechSynthesis;

@@ -160,6 +160,14 @@ export function createParticles() {
       uniform vec3 uRepel; uniform float uRepelStr;
       varying vec3 vColor; varying float vTw;
       vec3 pick(int s){ if(s==0) return aT0; if(s==1) return aT1; if(s==2) return aT2; if(s==3) return aT3; return aT4; }
+      // per-form motion amount: structured forms stay crisp, diffuse forms move freely
+      float formAmp(int s){
+        if(s==0) return 0.30; // text   — crisp
+        if(s==1) return 0.70; // sphere — diffuse, lively
+        if(s==2) return 0.75; // galaxy — diffuse, lively
+        if(s==3) return 0.34; // helix  — structured, crisp
+        return 0.30;          // heart  — crisp
+      }
       void main(){
         float ph = clamp(uPhase, 0.0, 4.0);
         int seg = int(floor(ph));
@@ -171,7 +179,8 @@ export function createParticles() {
         vec3 jit = vec3(sin(uTime * 1.3 + aSeed),
                         sin(uTime * 1.15 + aSeed * 1.7),
                         sin(uTime * 1.5 + aSeed * 2.3));
-        float amp = mix(0.45, 0.8, smoothstep(0.0, 0.85, uPhase)) + uFlow * 0.7;
+        // per-form motion (crisp on structured forms, lively on diffuse), lerped across morphs
+        float amp = mix(formAmp(seg), formAmp(min(seg + 1, 4)), f) + uFlow * 0.5;
         pos += jit * amp;
         // cursor repulsion: points near the mouse get pushed away → a bubble follows the cursor
         vec3 rdir = pos - uRepel;
