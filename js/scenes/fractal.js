@@ -72,31 +72,35 @@ export function createFractal() {
         vec3 ta = vec3(0.0);
         vec3 rd = camBasis(ro, ta) * normalize(vec3(uv, 1.4));
 
-        float t = 0.0, trap = 0.0, glow = 0.0;
+        float t = 0.0, trap = 0.0;
+        float minD = 1e9;       // closest approach → bounded halo (no runaway accumulation)
         bool hit = false;
-        for(int i = 0; i < 110; i++){
-          vec3 p = ro + rd * t;
+        vec3 p = ro;
+        for(int i = 0; i < 120; i++){
+          p = ro + rd * t;
           float tr; float d = DE(p, tr);
-          glow += 0.012 / (0.01 + d * d * 60.0); // volumetric haze near the surface
-          if(d < 0.0008){ trap = tr; hit = true; break; }
-          t += d * 0.85;
+          minD = min(minD, d);
+          if(d < 0.001){ trap = tr; hit = true; break; }
+          t += d * 0.9;
           if(t > 6.0) break;
         }
 
         vec3 col = vec3(0.0);
         if(hit){
-          vec3 p = ro + rd * t;
           vec3 n = calcNormal(p);
           vec3 lig = normalize(vec3(0.7, 0.8, -0.5));
           float dif = clamp(dot(n, lig), 0.0, 1.0);
-          float amb = 0.4 + 0.6 * n.y;
+          float amb = 0.5 + 0.5 * n.y;
+          float ao = 1.0 / (1.0 + t * 0.35);  // farther hits sit in shadow → depth
           // orbit-trap palette → iridescent fractal skin
-          vec3 base = 0.5 + 0.5 * cos(6.2831 * (trap * 1.4 + vec3(0.0, 0.33, 0.66)) + uTime * 0.3);
-          col = base * (amb * 0.5 + dif);
-          col += pow(clamp(1.0 - dot(n, -rd), 0.0, 1.0), 3.0) * vec3(0.3, 0.7, 1.0); // fresnel rim
+          vec3 base = 0.5 + 0.5 * cos(6.2831 * (trap * 1.5 + vec3(0.0, 0.33, 0.66)) + uTime * 0.3);
+          col = base * (0.18 * amb + 0.7 * dif) * ao;
+          float fres = pow(clamp(1.0 - dot(n, -rd), 0.0, 1.0), 3.0);
+          col += fres * vec3(0.2, 0.5, 0.9) * 0.5; // soft fresnel rim
         }
-        col += glow * vec3(0.35, 0.55, 1.0); // cyan nebula glow
-        col = pow(col, vec3(0.85)); // soft gamma
+        col += exp(-minD * 7.0) * vec3(0.18, 0.32, 0.7); // bounded cyan halo
+        col = col / (1.0 + col);          // Reinhard tone map → can never blow out to white
+        col = pow(col, vec3(0.85));       // gentle gamma
         gl_FragColor = vec4(col, 1.0);
       }
     `,
