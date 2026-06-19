@@ -166,13 +166,16 @@ export function createParticles() {
         float n = sin(pos.x * 0.14 + uTime * 0.7)
                 + cos(pos.y * 0.15 + uTime * 0.6)
                 + sin(pos.z * 0.13 + uTime * 0.5);
-        pos += normalize(pos + 0.0001) * n * (0.12 + uFlow * 0.8);
+        // living breathing: gentle on the text (stays readable), fuller on the abstract
+        // forms, plus extra churn during transitions (uFlow)
+        float breathe = mix(0.16, 0.45, smoothstep(0.0, 0.85, uPhase)) + uFlow * 0.45;
+        pos += normalize(pos + 0.0001) * n * breathe;
         // cursor repulsion: points near the mouse get pushed away → a bubble follows the cursor
         vec3 rdir = pos - uRepel;
         float rdist = length(rdir);
         pos += normalize(rdir + 0.0001) * smoothstep(14.0, 0.0, rdist) * 8.0 * uRepelStr;
         vColor = aColor;
-        vTw = 0.5 + 0.5 * sin(uTime * 2.2 + aSize * 9.0);
+        vTw = 0.5 + 0.5 * sin(uTime * 1.1 + aSize * 9.0);
         vec4 mv = modelViewMatrix * vec4(pos, 1.0);
         gl_PointSize = clamp(aSize * uPix * (110.0 / -mv.z) * (1.0 + uPulse * 0.4), 0.8, 6.0);
         gl_Position = projectionMatrix * mv;
@@ -190,7 +193,7 @@ export function createParticles() {
         a *= a * 0.42;
         // the text form (phase ~0) is dense → dim it so the letters glitter, not blow out
         float formDim = mix(0.42, 1.0, smoothstep(0.0, 0.85, uPhase));
-        vec3 col = vColor * (0.28 + 0.5 * vTw) * (1.0 + uPulse * 0.35) * formDim;
+        vec3 col = vColor * (0.42 + 0.22 * vTw) * (1.0 + uPulse * 0.35) * formDim;
         gl_FragColor = vec4(col, a);
       }
     `,
