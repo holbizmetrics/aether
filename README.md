@@ -43,6 +43,10 @@ Each act is a self-contained module in `js/scenes/` exposing `{ scene, camera, u
 
 Desktop-GPU-first. Pixel ratio is capped at 2×; particle count and raymarch step count are the main knobs (top of each scene module) if you want it lighter for phones.
 
+## Soundtrack
+
+`audio/track.mp3` — *"Pink Flamingo"*, an original track made by Holger with [Suno](https://suno.com). The visuals react to it live (bloom, swarm, and glass highlights pulse with the bass).
+
 ## License
 
-MIT © Holger
+MIT © Holger — code. The soundtrack is the author's own work; please don't reuse it without permission.
