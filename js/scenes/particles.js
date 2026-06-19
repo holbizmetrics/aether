@@ -140,6 +140,7 @@ export function createParticles() {
       uTime: { value: 0 },
       uPix: { value: 1 },
       uPulse: { value: 0 }, // bass energy from the music
+      uFlow: { value: 0 },  // turbulence amount: swells mid-morph, ~0 when a form is held
     },
     transparent: true,
     depthWrite: false,
@@ -147,7 +148,7 @@ export function createParticles() {
     vertexShader: /* glsl */`
       attribute vec3 aT0; attribute vec3 aT1; attribute vec3 aT2; attribute vec3 aT3;
       attribute float aSize; attribute vec3 aColor;
-      uniform float uPhase; uniform float uTime; uniform float uPix; uniform float uPulse;
+      uniform float uPhase; uniform float uTime; uniform float uPix; uniform float uPulse; uniform float uFlow;
       varying vec3 vColor; varying float vTw;
       vec3 pick(int s){ if(s==0) return aT0; if(s==1) return aT1; if(s==2) return aT2; return aT3; }
       void main(){
@@ -159,7 +160,7 @@ export function createParticles() {
         float n = sin(pos.x * 0.14 + uTime * 0.7)
                 + cos(pos.y * 0.15 + uTime * 0.6)
                 + sin(pos.z * 0.13 + uTime * 0.5);
-        pos += normalize(pos + 0.0001) * n * 0.7;
+        pos += normalize(pos + 0.0001) * n * (0.12 + uFlow * 0.8);
         vColor = aColor;
         vTw = 0.5 + 0.5 * sin(uTime * 2.2 + aSize * 9.0);
         vec4 mv = modelViewMatrix * vec4(pos, 1.0);
@@ -211,12 +212,21 @@ export function createParticles() {
     scene,
     camera,
     update(local, t, _dt, mouse, audio) {
-      mat.uniforms.uPhase.value = local * 3.0; // scroll morphs across all 4 shapes
+      // Dwell on each form (hold it sharp), then transition crisply — instead of
+      // sliding continuously through so the recognizable shape only flashes by.
+      const seg = Math.min(local, 0.9999) * 3.0;
+      const i = Math.floor(seg);
+      const f = seg - i;
+      const hold = 0.55;                          // first 55% of each band holds the form
+      let tf = Math.max(0, (f - hold) / (1 - hold));
+      tf = tf * tf * (3 - 2 * tf);                // smoothstep the transition
+      mat.uniforms.uPhase.value = i + tf;
+      mat.uniforms.uFlow.value = Math.sin(tf * Math.PI); // turbulence swells mid-morph, ~0 when held
       mat.uniforms.uTime.value = t;
       mat.uniforms.uPulse.value = audio ? audio.bass : 0.0;
-      // gentle auto-rotate + mouse parallax
+      // fixed tilt so the galaxy shows its spiral FACE (not edge-on) + slow spin + parallax
       points.rotation.y = t * 0.04 + mouse.x * 0.35;
-      points.rotation.x = mouse.y * 0.22;
+      points.rotation.x = 0.42 + mouse.y * 0.22;
       stars.rotation.y = t * 0.01;
       camera.position.x += (mouse.x * 6 - camera.position.x) * 0.04;
       camera.position.y += (mouse.y * 4 - camera.position.y) * 0.04;
