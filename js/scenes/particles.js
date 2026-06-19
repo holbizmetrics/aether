@@ -144,6 +144,8 @@ export function createParticles() {
       uPix: { value: 1 },
       uPulse: { value: 0 }, // bass energy from the music
       uFlow: { value: 0 },  // turbulence amount: swells mid-morph, ~0 when a form is held
+      uRepel: { value: new THREE.Vector3(999, 999, 999) }, // cursor position in the cloud's local space
+      uRepelStr: { value: 0 }, // 0 at rest (swarm heals), ramps up while the mouse moves
     },
     transparent: true,
     depthWrite: false,
@@ -152,6 +154,7 @@ export function createParticles() {
       attribute vec3 aT0; attribute vec3 aT1; attribute vec3 aT2; attribute vec3 aT3; attribute vec3 aT4;
       attribute float aSize; attribute vec3 aColor;
       uniform float uPhase; uniform float uTime; uniform float uPix; uniform float uPulse; uniform float uFlow;
+      uniform vec3 uRepel; uniform float uRepelStr;
       varying vec3 vColor; varying float vTw;
       vec3 pick(int s){ if(s==0) return aT0; if(s==1) return aT1; if(s==2) return aT2; if(s==3) return aT3; return aT4; }
       void main(){
@@ -164,6 +167,10 @@ export function createParticles() {
                 + cos(pos.y * 0.15 + uTime * 0.6)
                 + sin(pos.z * 0.13 + uTime * 0.5);
         pos += normalize(pos + 0.0001) * n * (0.12 + uFlow * 0.8);
+        // cursor repulsion: points near the mouse get pushed away → a bubble follows the cursor
+        vec3 rdir = pos - uRepel;
+        float rdist = length(rdir);
+        pos += normalize(rdir + 0.0001) * smoothstep(14.0, 0.0, rdist) * 8.0 * uRepelStr;
         vColor = aColor;
         vTw = 0.5 + 0.5 * sin(uTime * 2.2 + aSize * 9.0);
         vec4 mv = modelViewMatrix * vec4(pos, 1.0);
@@ -213,6 +220,14 @@ export function createParticles() {
   }));
   scene.add(stars);
 
+  // reused per-frame for projecting the cursor into the cloud's local space
+  const _ray = new THREE.Raycaster();
+  const _plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0); // z=0 plane through the cloud
+  const _hit = new THREE.Vector3();
+  const _inv = new THREE.Matrix4();
+  const _lastM = new THREE.Vector2();
+  let _repelStr = 0;
+
   return {
     scene,
     camera,
@@ -236,6 +251,19 @@ export function createParticles() {
       camera.position.x += (mouse.x * 6 - camera.position.x) * 0.04;
       camera.position.y += (mouse.y * 4 - camera.position.y) * 0.04;
       camera.lookAt(0, 0, 0);
+      // project the cursor onto the cloud's plane, in local space, for the repulsion bubble
+      camera.updateMatrixWorld();
+      _ray.setFromCamera(mouse, camera);
+      if (_ray.ray.intersectPlane(_plane, _hit)) {
+        points.updateWorldMatrix(true, false);
+        _hit.applyMatrix4(_inv.copy(points.matrixWorld).invert());
+        mat.uniforms.uRepel.value.copy(_hit);
+      }
+      // ramp repulsion up while the mouse moves, fade out (swarm heals) when idle
+      const moved = Math.abs(mouse.x - _lastM.x) + Math.abs(mouse.y - _lastM.y);
+      _lastM.copy(mouse);
+      _repelStr += ((moved > 0.0015 ? 1.0 : 0.0) - _repelStr) * 0.08;
+      mat.uniforms.uRepelStr.value = _repelStr;
     },
     resize(w, h) {
       camera.aspect = w / h;
