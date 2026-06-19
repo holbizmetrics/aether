@@ -89,9 +89,12 @@ body {
   transition: opacity 0.9s ease, transform 0.9s ease;
 }
 .copy.in { opacity: 1; transform: none; }
+/* hero + outro headings are huge — let them use the full width, not the 38rem column */
+.chapter[data-act="0"] .copy,
+.chapter[data-act="end"] .copy { max-width: none; }
 
 .title {
-  font-size: clamp(3.5rem, 16vw, 12rem);
+  font-size: clamp(3rem, 11vw, 8.5rem);
   font-weight: 800;
   letter-spacing: 0.12em;
   line-height: 0.9;

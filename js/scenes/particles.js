@@ -81,6 +81,21 @@ function targetHeart(arr, count) {
   }
 }
 
+// Glowing nebula sphere — spread through a volume so it never packs dense enough
+// to blow out (unlike text strokes). Sits behind the crisp HTML title.
+function targetSphere(arr, count) {
+  const R = 30;
+  for (let i = 0; i < count; i++) {
+    const u = Math.random() * 2 - 1;
+    const th = Math.random() * Math.PI * 2;
+    const r = R * Math.pow(Math.random(), 0.33);
+    const s = Math.sqrt(1 - u * u);
+    arr[i * 3]     = Math.cos(th) * s * r;
+    arr[i * 3 + 1] = u * r;
+    arr[i * 3 + 2] = Math.sin(th) * s * r;
+  }
+}
+
 // ---------- build ----------
 
 export function createParticles() {
@@ -95,7 +110,7 @@ export function createParticles() {
   const t1 = new Float32Array(COUNT * 3);
   const t2 = new Float32Array(COUNT * 3);
   const t3 = new Float32Array(COUNT * 3);
-  targetText(t0, COUNT);
+  targetSphere(t0, COUNT);
   targetGalaxy(t1, COUNT);
   targetHelix(t2, COUNT);
   targetHeart(t3, COUNT);

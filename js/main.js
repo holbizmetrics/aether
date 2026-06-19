@@ -41,10 +41,14 @@ const bloom = new UnrealBloomPass(
 composer.addPass(bloom);
 
 // --- Build the three acts ---
+// Boundaries align with the 5 scroll sections (each 1/5 of the page):
+//   sections 0+0b -> swarm | section 1 -> fractal | sections 2+end -> glass.
+// Fade gaps straddle the section seams (0.40, 0.60) so a caption never shows
+// over the wrong world.
 const acts = [
-  { name: "swarm",   make: createParticles, start: 0.00, end: 0.34 },
-  { name: "fractal", make: createFractal,   start: 0.38, end: 0.66 },
-  { name: "glass",   make: createGlass,     start: 0.70, end: 1.00 },
+  { name: "swarm",   make: createParticles, start: 0.00, end: 0.38 },
+  { name: "fractal", make: createFractal,   start: 0.42, end: 0.58 },
+  { name: "glass",   make: createGlass,     start: 0.62, end: 1.00 },
 ];
 for (const a of acts) a.obj = a.make(renderer);
 
