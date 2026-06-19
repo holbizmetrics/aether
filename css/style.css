@@ -1,0 +1,169 @@
+/* AETHER — styles. Dark, cinematic, content floats over the WebGL stage. */
+
+:root {
+  --ink: #eaf2ff;
+  --dim: #8fa3c8;
+  --accent: #6cf0ff;
+  --bg: #03040a;
+  --font: "Helvetica Neue", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The WebGL canvas sits fixed behind everything */
+#stage {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  z-index: 0;
+}
+
+/* Fade-through-black between acts */
+#fade {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Loading veil */
+#loader {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4rem;
+  background: var(--bg);
+  color: var(--dim);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  transition: opacity 0.8s ease;
+}
+#loader.gone { opacity: 0; pointer-events: none; }
+#loader .ring {
+  width: 42px; height: 42px;
+  border: 2px solid rgba(108,240,255,0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Scroll content */
+#scroll { position: relative; z-index: 2; }
+
+.chapter {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 0 8vw;
+}
+.chapter[data-act="0"]   { justify-content: center; text-align: center; }
+.chapter[data-act="end"] { justify-content: center; text-align: center; }
+.chapter[data-act="0b"]  { justify-content: flex-start; }
+.chapter[data-act="1"]   { justify-content: flex-end;   text-align: right; }
+.chapter[data-act="2"]   { justify-content: flex-start; }
+
+.copy {
+  max-width: 38rem;
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.9s ease, transform 0.9s ease;
+}
+.copy.in { opacity: 1; transform: none; }
+
+.title {
+  font-size: clamp(3.5rem, 16vw, 12rem);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 0.9;
+  background: linear-gradient(180deg, #fff, var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 60px rgba(108,240,255,0.25);
+}
+.chapter h2 {
+  font-size: clamp(2rem, 6vw, 4rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 40px rgba(0,0,0,0.8);
+}
+.chapter p {
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  line-height: 1.6;
+  color: var(--dim);
+  text-shadow: 0 2px 20px rgba(0,0,0,0.9);
+}
+.tag { letter-spacing: 0.08em; }
+
+.hint {
+  margin-top: 3rem;
+  font-size: 1.6rem;
+  color: var(--accent);
+  animation: bob 1.8s ease-in-out infinite;
+}
+@keyframes bob { 0%,100%{ transform: translateY(0); opacity:.5 } 50%{ transform: translateY(12px); opacity:1 } }
+
+.ghbtn {
+  display: inline-block;
+  margin-top: 2rem;
+  padding: 0.8rem 1.6rem;
+  border: 1px solid rgba(108,240,255,0.4);
+  border-radius: 999px;
+  color: var(--accent);
+  text-decoration: none;
+  letter-spacing: 0.1em;
+  font-size: 0.85rem;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.ghbtn:hover { background: rgba(108,240,255,0.1); box-shadow: 0 0 30px rgba(108,240,255,0.3); }
+
+/* HUD */
+#hud {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 8vw 1.4rem;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+#hud .acts { display: flex; gap: 1.4rem; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); }
+#hud .acts span { opacity: 0.3; transition: opacity 0.4s, color 0.4s; }
+#hud .acts span.on { opacity: 1; color: var(--accent); }
+#hud .bar { width: 30vw; max-width: 240px; height: 2px; background: rgba(255,255,255,0.12); border-radius: 2px; overflow: hidden; }
+#hud .bar i { display: block; height: 100%; width: 0; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+
+@media (max-width: 640px) {
+  #hud .acts { display: none; }
+  .chapter { padding: 0 6vw; }
+}
+
+/* If WebGL is missing, at least say something */
+.webgl-error {
+  position: fixed; inset: 0; z-index: 99;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center; padding: 2rem; background: var(--bg); color: var(--dim);
+}

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AETHER — a journey through impossible browser worlds</title>
+  <meta name="description" content="A single-page WebGL experience: scroll through a living particle swarm, an infinite fractal universe, and molten liquid glass. All procedural. All in your browser." />
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Three.js via import map — zero build step, deploys straight to GitHub Pages -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- The whole experience renders here, fixed behind the scroll content -->
+  <canvas id="stage"></canvas>
+
+  <!-- Cinematic fade-through-black between worlds -->
+  <div id="fade"></div>
+
+  <!-- Loading veil -->
+  <div id="loader"><div class="ring"></div><span>entering the aether…</span></div>
+
+  <!-- Scroll-driven overlay content. Each chapter fades in over its act. -->
+  <main id="scroll">
+    <section class="chapter" data-act="0">
+      <div class="copy">
+        <h1 class="title">AETHER</h1>
+        <p class="tag">scroll to fall through three impossible worlds</p>
+        <div class="hint">▼</div>
+      </div>
+    </section>
+
+    <section class="chapter" data-act="0b">
+      <div class="copy">
+        <h2>A living swarm</h2>
+        <p>Half a million points, alive on your graphics card. No model. No mesh. Just math, breathing.</p>
+      </div>
+    </section>
+
+    <section class="chapter" data-act="1">
+      <div class="copy">
+        <h2>An infinite universe</h2>
+        <p>Every pixel is one equation, solved 2&nbsp;million times a frame. Fall in. It never ends.</p>
+      </div>
+    </section>
+
+    <section class="chapter" data-act="2">
+      <div class="copy">
+        <h2>Molten glass</h2>
+        <p>Light bends, splits into rainbow, and reflects the room around it — computed live, sixty times a second.</p>
+      </div>
+    </section>
+
+    <section class="chapter" data-act="end">
+      <div class="copy">
+        <h2>…how?</h2>
+        <p class="tag">Three.js · GLSL · raymarching · GPU particles · physically-based refraction.<br/>No plugins. No install. Just a browser.</p>
+        <a class="ghbtn" href="#" id="repolink" target="_blank" rel="noopener">★ source on GitHub</a>
+      </div>
+    </section>
+  </main>
+
+  <!-- HUD: act indicator + scroll progress -->
+  <aside id="hud">
+    <div class="acts">
+      <span data-i="0">I · swarm</span>
+      <span data-i="1">II · fractal</span>
+      <span data-i="2">III · glass</span>
+    </div>
+    <div class="bar"><i id="progress"></i></div>
+  </aside>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

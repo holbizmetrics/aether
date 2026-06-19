@@ -1,0 +1,7 @@
+# Nothing to build — this is a static site. Keep it clean anyway.
+.DS_Store
+Thumbs.db
+node_modules/
+*.log
+.vscode/
+.idea/
